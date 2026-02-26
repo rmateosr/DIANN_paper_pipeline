@@ -20,7 +20,7 @@ DB="/path/to/uniprotkb_proteome_UP000005640_oneline.fasta"
 ```
 Find the `apptainer exec ... diann-2.0.2.img` line and update the image path.
 
-## Run
+## How to run
 ```bash
 cd scripts/
 bash Complete_pipeline.sh
