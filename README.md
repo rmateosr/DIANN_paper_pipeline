@@ -11,45 +11,7 @@ DIA-NN–based proteogenomic pipeline to detect **somatic mutation peptides** an
    - fusion-derived candidates
 4. **Post-process**: quantify, annotate, and generate summary tables + PDFs
 
-## Repo layout (main files)
-
-```
-DIANN_paper_pipeline/
-├── data/
-│   └── fasta/
-│       └── referenceplusmutatedsequencesplusfusionslevel1.fasta
-└── scripts/
-    ├── Complete_pipeline.sh                  # entry point
-    ├── generate_diann_job.sh                 # builds DIA-NN job script from your samples
-    ├── Library_and_DIANN_hotspot.sh          # auto-generated (frozen study run)
-    ├── Post_DIANN_pipeline.sh                # post-DIA-NN processing + submits R jobs
-    ├── peptidetofasta.py                     # PR matrix -> peptide FASTA
-    ├── presentinlibraryparallel_grepjustone.sh  # filters canonical peptides
-    ├── Gene_Fusion_Library_Generation.Rscript
-    ├── qsub_RscriptforGeneFusionLibraryGeneration.sh
-    ├── noncanonicalpeptidesanalysis_Hotspot.R
-    ├── noncanonicalpeptidesanalysis_GeneFusion.R
-    ├── qsub_RscriptforHotspot.sh
-    └── qsub_RscriptforGeneFusion.sh
-```
-
-## Requirements
-
-### Compute / tools
-- **SGE-style scheduler**: `qsub`, `qstat`
-- **Apptainer** (Singularity)
-- **DIA-NN 2.0.2** Apptainer image (e.g. `diann-2.0.2.img`)
-- **GNU parallel**
-- **Python 3** (+ `pandas`)
-- **R ≥ 4.4.3** with: `Biostrings`, `data.table`, `stringr`, `dplyr`, `ggplot2`, `RColorBrewer`, `reshape2`, `pwalign`
-
-### Inputs you must have
-- DIA files in one directory (expected: `*.raw.dia`)
-- Custom FASTA in `data/fasta/` (already in this repo)
-- Canonical human proteome FASTA (UniProt), **one-line format** (header line + sequence line)
-- FusionPDB Level 1 table (only if regenerating the fusion peptide library)
-
-## Setup (edit paths once)
+## Setup
 
 ### 1) Set paths in `scripts/Complete_pipeline.sh`
 ```bash
@@ -65,33 +27,10 @@ DB="/path/to/uniprotkb_proteome_UP000005640_oneline.fasta"
 ### 3) Point to the DIA-NN Apptainer image in `generate_diann_job.sh`
 Find the `apptainer exec ... diann-2.0.2.img` line and update the image path.
 
-## Run
-
-From the `scripts/` directory.
-
-### Optional (one-time): regenerate fusion peptide library
-Only needed if you want to rebuild `fusionpeptidelistdfunique.tsv`.
-
-```bash
-cd scripts/
-qsub qsub_RscriptforGeneFusionLibraryGeneration.sh
-```
-
 ### Main: run everything
 ```bash
 cd scripts/
 bash Complete_pipeline.sh
-```
-
-What this submits:
-- **DIANN**: runs DIA-NN (library + quant)
-- **PostDIANN** (held until DIANN finishes): converts PR matrix to FASTA, filters canonical peptides, then submits:
-  - **RHotspot**
-  - **RGeneFusion**
-
-Monitor with:
-```bash
-qstat
 ```
 
 ## Outputs
@@ -117,32 +56,3 @@ Intermediate post-processing files:
 - `peptide.fasta` (all DIA-NN peptides in FASTA format)
 - `non_canonical_sequences_justsequences.txt` (peptides absent from canonical proteome)
 
-## Pipeline diagram (high level)
-
-```
-DIA files + Custom FASTA
-        |
-        v
-      DIA-NN
-        |
-        v
-report_peptidoforms.pr_matrix.tsv
-        |
-        v
-peptidetofasta.py  -> peptide.fasta
-        |
-        v
-presentinlibraryparallel_grepjustone.sh
-        |
-        +--> hotspot R analysis  -> Peptidomics_Results/
-        |
-        +--> fusion R analysis   -> Peptidomics_Results/
-```
-
-## Notes / limitations
-
-- Some scripts have **hardcoded absolute paths** from the original environment. Update paths before running elsewhere.
-- DIA-NN configured for **7–30 aa peptides**. Anything outside that range will be missed.
-- **I/L ambiguity**: MS cannot distinguish isoleucine vs leucine.
-- **KRAS/HRAS/NRAS**: identical regions can make some hotspot peptides indistinguishable.
-- Fusion peptide calling is **exploratory** and benefits from orthogonal validation.
