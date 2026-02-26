@@ -38,3 +38,5 @@ bash Complete_pipeline.sh
 - `peptide.fasta` :  all DIA-NN peptides in FASTA format
 - `non_canonical_sequences_justsequences.txt` :  peptides absent from canonical proteome
 
+
+Scripts for figure generation are also included in this repository.
