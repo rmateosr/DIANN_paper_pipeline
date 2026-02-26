@@ -2,8 +2,6 @@
 
 DIA-NN–based proteogenomic pipeline to detect **somatic mutation peptides** and **gene-fusion peptides** from DIA mass spectrometry runs. Designed for cancer **cell lines** and **PDX** samples.
 
-## What it does
-
 1. **Run DIA-NN** using a custom FASTA (reference proteome + hotspot variants + fusion sequences)
 2. **Remove canonical peptides** (exact matches to the human reference proteome)
 3. **Split non-canonical hits** into:
