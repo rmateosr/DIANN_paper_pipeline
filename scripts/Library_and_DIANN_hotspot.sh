@@ -14,15 +14,15 @@ set -o nounset
 module use /usr/local/package/modulefiles/
 module load apptainer/
 
-apptainer exec /home/rmateosr/Proteomics/DIANN/diann-2.0.2.img /diann-2.0.2/diann-linux \
+apptainer exec /path/to/diann-2.0.2.img /diann-2.0.2/diann-linux \
 --lib "" --threads 32 --verbose 1 \
 --out "Reports/report.parquet" \
 --qvalue 0.01 --matrices  --out-lib "Library/library.parquet" \
---gen-spec-lib --predictor --fasta "/home/rmateosr/Proteomics/DIANN_Pipeline_Repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta" \
+--gen-spec-lib --predictor --fasta "/path/to/this/repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta" \
 --fasta-search --min-fr-mz 200 --max-fr-mz 1800 --met-excision --min-pep-len 7 --max-pep-len 30 --min-pr-mz 300 --max-pr-mz 1800 --min-pr-charge 1 \
 --max-pr-charge 4 --cut K*,R* --missed-cleavages 1 --unimod4 --mass-acc 10 --mass-acc-ms1 4 --peptidoforms --reanalyse --rt-profiling --high-acc
 
-apptainer exec /home/rmateosr/Proteomics/DIANN/diann-2.0.2.img /diann-2.0.2/diann-linux \
+apptainer exec /path/to/diann-2.0.2.img /diann-2.0.2/diann-linux \
 --f "/home/rmateosr/Proteomics/Adachi_PDX/Samples/DIA//J-PDX0009_1.raw.dia" \
 --f "/home/rmateosr/Proteomics/Adachi_PDX/Samples/DIA//J-PDX0009_2.raw.dia" \
 --f "/home/rmateosr/Proteomics/Adachi_PDX/Samples/DIA//J-PDX0013_1.raw.dia" \
@@ -124,6 +124,6 @@ apptainer exec /home/rmateosr/Proteomics/DIANN/diann-2.0.2.img /diann-2.0.2/dian
 --lib "Library/library.predicted.speclib" \
 --threads 32 --verbose 1 --out "Reports/report_peptidoforms.tsv" \
 --qvalue 0.01 --matrices  --out-lib "Library/library_FROM_peptidoform.parquet" \
---fasta "/home/rmateosr/Proteomics/DIANN_Pipeline_Repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta" \
+--fasta "/path/to/this/repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta" \
 --gen-spec-lib --met-excision --cut K*,R* --missed-cleavages 1 --unimod4 --mass-acc 10 --mass-acc-ms1 4.0 \
 --peptidoforms --reanalyse --rt-profiling --high-acc

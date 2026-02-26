@@ -6,6 +6,7 @@
 # Arguments
 SAMPLE_DIR="$1"
 FASTA_FILE="$2"
+DIANN_IMG="$3"
 
 echo "#!/bin/bash"
 echo "#\$ -S /bin/bash"
@@ -21,7 +22,7 @@ echo ""
 echo "module use /usr/local/package/modulefiles/"
 echo "module load apptainer/"
 echo ""
-echo "apptainer exec /home/rmateosr/Proteomics/DIANN/diann-2.0.2.img /diann-2.0.2/diann-linux \\"
+echo "apptainer exec $DIANN_IMG /diann-2.0.2/diann-linux \\"
 echo "--lib \"\" --threads 32 --verbose 1 \\"
 echo "--out \"Reports/report.parquet\" \\"
 echo "--qvalue 0.01 --matrices  --out-lib \"Library/library.parquet\" \\"
@@ -29,7 +30,7 @@ echo "--gen-spec-lib --predictor --fasta \"$FASTA_FILE\" \\"
 echo "--fasta-search --min-fr-mz 200 --max-fr-mz 1800 --met-excision --min-pep-len 7 --max-pep-len 30 --min-pr-mz 300 --max-pr-mz 1800 --min-pr-charge 1 \\"
 echo "--max-pr-charge 4 --cut K*,R* --missed-cleavages 1 --unimod4 --mass-acc 10 --mass-acc-ms1 4 --peptidoforms --reanalyse --rt-profiling --high-acc"
 echo ""
-echo "apptainer exec /home/rmateosr/Proteomics/DIANN/diann-2.0.2.img /diann-2.0.2/diann-linux \\"
+echo "apptainer exec $DIANN_IMG /diann-2.0.2/diann-linux \\"
 
 # Add --f for each .raw.dia file
 for file in "$SAMPLE_DIR"/*.raw.dia; do

@@ -10,15 +10,18 @@
 set -xv
 set -euo pipefail
 
-SAMPLE_DIR="/home/rmateosr/Proteomics/Adachi_PDX/Samples/DIA/"
-FASTA_FILE="/home/rmateosr/Proteomics/DIANN_Pipeline_Repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta"
+# ── User-configurable paths ───────────────────────────────────────────────────
+SAMPLE_DIR="/path/to/your/DIA/raw/files"
+FASTA_FILE="/path/to/this/repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta"
+DIANN_IMG="/path/to/diann-2.0.2.img"
+# ──────────────────────────────────────────────────────────────────────────────
 
 mkdir -p Library
 mkdir -p Reports
 chmod +x generate_diann_job.sh
 
 #This command generates Library_and_DIANN_hotspot.sh dynamically
-./generate_diann_job.sh "$SAMPLE_DIR" "$FASTA_FILE" > Library_and_DIANN_hotspot.sh
+./generate_diann_job.sh "$SAMPLE_DIR" "$FASTA_FILE" "$DIANN_IMG" > Library_and_DIANN_hotspot.sh
 
 qsub -N DIANN Library_and_DIANN_hotspot.sh
 qsub -hold_jid DIANN -N PostDIANN Post_DIANN_pipeline.sh

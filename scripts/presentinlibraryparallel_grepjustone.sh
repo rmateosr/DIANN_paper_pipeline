@@ -16,7 +16,7 @@ set -o nounset
 
 # Input paths
 QUERY="peptide.fasta"
-DB="/home/rmateosr/Proteomics/Gene_Fusion_Analysis/SHIROKANE_04112025/uniprotkb_proteome_UP000005640_2025_04_14_oneline.fasta"
+DB="/path/to/uniprotkb_proteome_UP000005640_oneline.fasta"
 
 # Output
 NOT_PRESENT="non_canonical_sequences_justsequences.txt"
