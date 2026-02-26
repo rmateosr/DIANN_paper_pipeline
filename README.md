@@ -15,7 +15,7 @@ Our pipeline:
 
 ```bash
 SAMPLE_DIR="/path/to/your/DIA/raw/files/"   # directory containing *.raw.dia
-FASTA_FILE="/path/to/this/repo/data/fasta/reference_mutated_fusions.fasta"
+FASTA_FILE="/path/to/this/repo/data/fasta/reference_with_mutated_and_fusions.fasta"
 DB="/path/to/uniprotkb_proteome_UP000005640_oneline.fasta"
 ```
 Find the `apptainer exec ... diann-2.0.2.img` line and update the image path.
