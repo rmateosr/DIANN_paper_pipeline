@@ -131,7 +131,7 @@ for(nfusion in 1:length(sequencelist)){
         }
         
         if(length(RKpost) == 0 &   rangeexploration[2] == nchar(sequence) ){
-          RKpost = nchar(thisfasta)
+          RKpost = nchar(sequence)
         }
         
         if((length(RKpre) == 0 )| (length(RKpre) == 0)) {
@@ -179,4 +179,4 @@ for(nfusion in 1:length(sequencelist)){
   
 }
 fusionsiteselection = filteredresultsdiann[fusionsite,]
-write.table(fusionsiteselection, "non_canonical_sequences_justsequences_fusionsite.txt", col.names = FALSE, row.names = FALSE, quote = FALSE, sep  = "/t")
+write.table(fusionsiteselection, "non_canonical_sequences_justsequences_fusionsite.txt", col.names = FALSE, row.names = FALSE, quote = FALSE, sep  = "\t")

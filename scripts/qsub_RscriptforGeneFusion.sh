@@ -12,11 +12,6 @@ set -o nounset
 module use /usr/local/package/modulefiles/
 module load R/4.4.3
 
-#Rscript Peptidefusiongeneration.R
 Rscript noncanonicalpeptidesanalysis_GeneFusion.R
-
-
-
-
 
 

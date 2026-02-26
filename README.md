@@ -42,7 +42,7 @@ DIANN_paper_pipeline/
 - [DIA-NN 2.0.2](https://github.com/vdemichev/DiaNN) Apptainer image (`diann-2.0.2.img`)
 - [GNU Parallel](https://www.gnu.org/software/parallel/)
 - Python 3 with `pandas`
-- R ≥ 4.4.3 with packages: `Biostrings`, `data.table`, `stringr`, `dplyr`, `ggplot2`, `RColorBrewer`, `reshape2`, `pwalign`
+- R ≥ 4.4.3 with packages: `Biostrings`, `data.table`, `stringr`, `dplyr`, `ggplot2`, `RColorBrewer`, `reshape2`
 
 ### Data required before running
 - DIA raw files (`.raw.dia` format), all in a single directory
@@ -54,24 +54,18 @@ DIANN_paper_pipeline/
 
 ## Configuration
 
-Before running, open `Complete_pipeline.sh` and set the two path variables at the top of the file:
+Before running, open `Complete_pipeline.sh` and set the three path variables at the top of the file:
 
 ```bash
 SAMPLE_DIR="/path/to/your/DIA/raw/files/"   # Directory containing *.raw.dia files
 FASTA_FILE="/path/to/this/repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta"
+DIANN_IMG="/path/to/diann-2.0.2.img"         # Apptainer image for DIA-NN 2.0.2
 ```
 
-Also update the following hardcoded paths in `presentinlibraryparallel_grepjustone.sh`:
+Also update the hardcoded path in `presentinlibraryparallel_grepjustone.sh`:
 
 ```bash
 DB="/path/to/your/uniprotkb_proteome_UP000005640_oneline.fasta"
-```
-
-And update the DIA-NN image path in `generate_diann_job.sh`:
-
-```bash
-# Look for the apptainer exec line and update:
-apptainer exec /path/to/diann-2.0.2.img ...
 ```
 
 ---
