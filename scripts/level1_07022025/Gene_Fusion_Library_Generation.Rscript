@@ -1,0 +1,167 @@
+# ABOUTME: Part of the DIA-NN Level 1 pipeline toolchain.
+# ABOUTME: Review inputs and paths before running on your environment.
+# Load required package
+library(Biostrings)
+library(data.table)
+library(stringr)
+library(dplyr)
+
+#rm(list = ls())
+level1original = data.frame(fread("Level1combinedFGDB2genes_ORF_analyzed_gencode_h19v19_real_Inframe_only_transcript_seq_with_orffinder_result.txt"))
+#
+#level1unique = unique(level1 %>% select("V8", "V12", "V16", "V17"))
+#
+#
+#
+#level1 = level1[ level1$V8 %in% potentialfusedgenesfromDIANN$X1 &  level1$V12 %in% potentialfusedgenesfromDIANN$X2,]
+#level1 = level1[ level1$V8 %in% potentialfusedgenesfromDIANN$X1 &  level1$V12 %in% potentialfusedgenesfromDIANN$X2,]
+#
+#
+
+
+
+
+# Load the package
+library(Biostrings)
+
+level1 = unique(level1original %>% select("V8", "V12", "V16","V17","V19", "V20","V21"))
+
+fusionpeptidelist = list()
+items_list = 1
+
+
+for(nfusion in 1:dim(level1)[1]){
+  gascase1 = level1[nfusion,]
+  
+#  there are cases whre the breakpoint occurs before the starting codon. I will skip them for now
+  
+  if(gascase1$V16 >  gascase1$V20){
+  # Example DNA sequence
+  dna <- DNAString(substring(gascase1$V17, gascase1$V16 -gascase1$V16%%3 +1, gascase1$V21+1))
+  startoftranscript= gascase1$V20 + 1 
+  endoftranscript= gascase1$V21 + 1 
+  
+  
+  
+  #add the conditions for cases where our peptide bracket starts before the breaking point, and also when it ends after the stop codon
+  
+  startcodonregiontoexplore = (gascase1$V16  - 30 * 3  - (gascase1$V16 - gascase1$V20)%%3 + 1 )
+  positionlastbaseofcodonbeforebreakpoint = ((gascase1$V16 -(gascase1$V16 - gascase1$V20)%%3 + 1 )-1)
+  
+  positioncodonatbreakpoint = ((gascase1$V16 -(gascase1$V16 - gascase1$V20)%%3 + 1 ))
+  positionlastbaseofregiontoexplore = ((gascase1$V16  + 30 * 3  - (gascase1$V16 - gascase1$V20)%%3 + 1 ) -1)
+  
+  
+  if(startcodonregiontoexplore < (gascase1$V20 + 1) ){
+    startcodonregiontoexplore =  (gascase1$V20 + 1)
+  }
+  
+  
+  if(positionlastbaseofregiontoexplore >  (gascase1$V21 + 1) ){
+    positionlastbaseofregiontoexplore =  (gascase1$V21 + 1)
+  }
+  
+  
+  
+  #until the base before the first base of the codon where the breakpoint happens
+  DNApreseq = DNAString(substring(gascase1$V17, 
+                                  startcodonregiontoexplore, 
+                                  positionlastbaseofcodonbeforebreakpoint ))
+  preseq = as.character(translate(DNApreseq))
+  
+  DNApostseq = DNAString(substring(gascase1$V17, 
+                                   positioncodonatbreakpoint,
+                                   positionlastbaseofregiontoexplore))
+  postseq = as.character(translate(DNApostseq))
+  
+  rangeexploration = c(startcodonregiontoexplore, positionlastbaseofregiontoexplore)
+  #        #Sometimes the fusion generates a novel Aa.
+  #        #This Aa could be am K/R and cause the protein to be cut
+  #        #To take it into account we will explore the first peptide until the fusion,
+  #        #and the second peptide from the fusion LABELED IN THE FIRST GENE + 1
+  #        #AALLLKPVVVV
+  #        #AAAAL
+  #        #      PVVVV
+  #        #We will include the K in the second peptide/section 
+  #        #
+  #        
+  #       
+  #       preseq = substring(sequence, rangeexploration[1] , fusioncoords[1])
+  #       postseq = substring(sequence, fusioncoords[1]+1 , rangeexploration[2])
+  
+  
+  
+  
+  RKpre = which(strsplit(preseq, "")[[1]] %in% c("R", "K"))
+  
+  if(length(RKpre) > 2){
+    RKpre = RKpre[(length(RKpre)-1):(length(RKpre))]
+  }
+  
+  #if there is no RK and we are at the beginning of the peptide, then we can say
+  # RKpre = 0 so that it makes the original sequence starting from M until the hotspot
+  if(length(RKpre) == 0  & rangeexploration[1] == startoftranscript ){
+    RKpre = 0
+  }
+  RKpost = which(strsplit(postseq, "")[[1]] %in% c("R", "K"))
+  
+  
+  if(length(RKpost) > 2){
+    RKpost = RKpost[1:2]
+  }
+  
+  if(length(RKpost) == 0 &   rangeexploration[2] == endoftranscript ){
+    RKpost = endoftranscript
+  }
+  
+  if((length(RKpre) == 0 )| (length(RKpre) == 0)) {
+    #   results[[i]] = data.frame(thisfusion[,1:2], Sequence = NA , Comments ="ERROR: Peptide much longer than allowed by DIA-NN (> 60)")
+    #   i = i + 1
+  } else {
+    
+    #perform this for every pair of RKpre and RKpost
+    RKpre_set = RKpre
+    RKpost_set = RKpost
+    
+    version  = 1
+    
+    for(npre in 1:length(RKpre_set)){
+      for(npost in 1:length(RKpost_set)){
+        
+        RKpre = RKpre_set[npre]
+        RKpost = RKpost_set[npost]
+        
+        afterlastRKpre = substring(preseq,RKpre[length(RKpre)]+1 )
+        untilfirstRKpostincluded = substring(postseq,1, RKpost[1] )
+        thispeptidesequence = paste0(afterlastRKpre,untilfirstRKpostincluded)
+        fusionpeptidelist[[items_list]]  = c(gascase1$V8, gascase1$V12, gascase1$V16, thispeptidesequence)
+        version = version + 1
+        items_list = items_list + 1
+        
+        
+        
+      }
+      
+    }
+    
+    
+  }
+}
+}
+
+
+fusionpeptidelistdf = as.data.frame(do.call(rbind, fusionpeptidelist)) 
+
+
+fusionpeptidelistdfunique = unique(fusionpeptidelistdf)
+
+
+
+write.table(fusionpeptidelistdfunique, "fusionpeptidelistdfunique.tsv", col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
+
+
+#saveRDS(fusionpeptidelist, "fusionpeptidelist.RDS")
+#fusionpeptidelistbackup = fusionpeptidelist
+
+#saveRDS(fusionpeptidelist, "fusionpeptidelist.RDS")
+#fusionpeptidelistbackup = fusionpeptidelist
