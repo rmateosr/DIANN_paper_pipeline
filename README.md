@@ -18,19 +18,18 @@ DIANN_paper_pipeline/
 │   └── fasta/
 │       └── referenceplusmutatedsequencesplusfusionslevel1.fasta   # Custom library FASTA
 └── scripts/
-    └── level1_07022025/
-        ├── Complete_pipeline.sh                     # ENTRY POINT — start here
-        ├── generate_diann_job.sh                    # Generates the DIA-NN job script dynamically
-        ├── Library_and_DIANN_hotspot.sh             # Auto-generated DIA-NN job (study-specific)
-        ├── Post_DIANN_pipeline.sh                   # Post-DIA-NN processing and job submission
-        ├── peptidetofasta.py                        # Converts DIA-NN PR matrix to FASTA
-        ├── presentinlibraryparallel_grepjustone.sh  # Filters out canonical-proteome peptides
-        ├── Gene_Fusion_Library_Generation.Rscript   # Builds the fusion breakpoint peptide library
-        ├── qsub_RscriptforGeneFusionLibraryGeneration.sh  # qsub wrapper for above
-        ├── noncanonicalpeptidesanalysis_Hotspot.R   # Hotspot mutation analysis and plots
-        ├── noncanonicalpeptidesanalysis_GeneFusion.R # Gene fusion analysis and plots
-        ├── qsub_RscriptforHotspot.sh                # qsub wrapper for hotspot R analysis
-        └── qsub_RscriptforGeneFusion.sh             # qsub wrapper for gene fusion R analysis
+    ├── Complete_pipeline.sh                     # ENTRY POINT — start here
+    ├── generate_diann_job.sh                    # Generates the DIA-NN job script dynamically
+    ├── Library_and_DIANN_hotspot.sh             # Auto-generated DIA-NN job (study-specific)
+    ├── Post_DIANN_pipeline.sh                   # Post-DIA-NN processing and job submission
+    ├── peptidetofasta.py                        # Converts DIA-NN PR matrix to FASTA
+    ├── presentinlibraryparallel_grepjustone.sh  # Filters out canonical-proteome peptides
+    ├── Gene_Fusion_Library_Generation.Rscript   # Builds the fusion breakpoint peptide library
+    ├── qsub_RscriptforGeneFusionLibraryGeneration.sh  # qsub wrapper for above
+    ├── noncanonicalpeptidesanalysis_Hotspot.R   # Hotspot mutation analysis and plots
+    ├── noncanonicalpeptidesanalysis_GeneFusion.R # Gene fusion analysis and plots
+    ├── qsub_RscriptforHotspot.sh                # qsub wrapper for hotspot R analysis
+    └── qsub_RscriptforGeneFusion.sh             # qsub wrapper for gene fusion R analysis
 ```
 
 ---
@@ -79,14 +78,14 @@ apptainer exec /path/to/diann-2.0.2.img ...
 
 ## Running the Pipeline
 
-All scripts should be run from within `scripts/level1_07022025/`.
+All scripts should be run from within `scripts/`.
 
 ### Step 0 (one-time): Build the gene fusion breakpoint peptide library
 
 This step is only required if you need to regenerate the fusion peptide reference file (`fusionpeptidelistdfunique.tsv`). It requires the FusionPDB Level 1 annotation table.
 
 ```bash
-cd scripts/level1_07022025/
+cd scripts/
 qsub qsub_RscriptforGeneFusionLibraryGeneration.sh
 ```
 
@@ -95,7 +94,7 @@ Output: `fusionpeptidelistdfunique.tsv`
 ### Step 1: Run the full pipeline
 
 ```bash
-cd scripts/level1_07022025/
+cd scripts/
 bash Complete_pipeline.sh
 ```
 
