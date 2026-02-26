@@ -1,6 +1,6 @@
 # DIANN Paper Pipeline
 
-DIA-NN–based proteogenomic pipeline to detect **somatic mutation peptides** and **gene-fusion peptides** from DIA mass spectrometry runs. Currently designed for cancer **cell lines** and **PDX** samples.
+DIA-NN–based proteogenomic pipeline to detect **somatic mutation peptides** and **gene-fusion peptides** from DIA mass spectrometry runs.
 
 ## Pipeline
 Our pipeline:
