@@ -1,2 +1,5 @@
 diann/diann-2.0.2.img
 scripts/Library_and_DIANN_hotspot.sh
+scripts/Figure_Scripts/gene_fusion_peptides.R
+scripts/Figure_Scripts/nrf2_keap1_classifier.R
+scripts/Figure_Scripts/prex2_expression_pdx.R
