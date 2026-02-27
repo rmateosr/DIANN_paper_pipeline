@@ -32,8 +32,9 @@ set -euo pipefail
 
 # ── User-configurable paths ───────────────────────────────────────────────────
 SAMPLE_DIR="/path/to/your/DIA/raw/files"
-FASTA_FILE="/path/to/this/repo/data/fasta/referenceplusmutatedsequencesplusfusionslevel1.fasta"
+FASTA_FILE="/path/to/this/repo/data/fasta/level1_proteome.fasta"
 DIANN_IMG="/path/to/diann-2.0.2.img"
+PROTEOME_FILE="/path/to/human_canonical_proteome.fasta"  # Human canonical reference proteome (one sequence per line)
 # ──────────────────────────────────────────────────────────────────────────────
 
 # Create output directories expected by DIA-NN
@@ -43,11 +44,13 @@ chmod +x generate_diann_job.sh
 
 # Dynamically build the DIA-NN cluster job script by injecting sample paths into the template.
 # This avoids hardcoding file lists and allows the script to adapt to any sample set.
-./generate_diann_job.sh "$SAMPLE_DIR" "$FASTA_FILE" "$DIANN_IMG" > Library_and_DIANN_hotspot.sh
+./generate_diann_job.sh "$SAMPLE_DIR" "$FASTA_FILE" "$DIANN_IMG" > diann_search_job.sh
 
 # Submit the DIA-NN job (Stage 1). The -N flag names the job "DIANN" for dependency tracking.
-qsub -N DIANN Library_and_DIANN_hotspot.sh
+qsub -N DIANN diann_search_job.sh
 
 # Submit post-processing (Stage 2) with a hold on Stage 1 completing successfully.
 # -hold_jid ensures PostDIANN only starts after all DIANN jobs finish.
-qsub -hold_jid DIANN -N PostDIANN Post_DIANN_pipeline.sh
+# -v passes PROTEOME_FILE into the job environment so filter_canonical_peptides.sh
+# can find the canonical reference proteome without the user editing that script directly.
+qsub -hold_jid DIANN -N PostDIANN -v PROTEOME_FILE="$PROTEOME_FILE" Post_DIANN_pipeline.sh

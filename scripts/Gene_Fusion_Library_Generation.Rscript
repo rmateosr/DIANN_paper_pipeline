@@ -4,12 +4,12 @@
 # PURPOSE:
 #   Pre-pipeline step (run BEFORE Complete_pipeline.sh) that generates the library of
 #   expected fusion-spanning tryptic peptides from a gene fusion database.
-#   The output (fusionpeptidelistdfunique.tsv) feeds into two downstream steps:
+#   The output (gene_fusion_peptide_library.tsv) feeds into two downstream steps:
 #     - The Level 1 FASTA construction (fusion sequences are included in the search database)
 #     - noncanonicalpeptidesanalysis_GeneFusion.R (cross-reference detected peptides)
 #
 # INPUT:
-#   Level1combinedFGDB2genes_ORF_analyzed_gencode_h19v19_real_Inframe_only_transcript_seq_with_orffinder_result.txt
+#   fusion_inframe_orfs.tsv
 #     Tab-delimited fusion database with (at minimum) these columns by 1-based index:
 #       V8  — Gene 1 name
 #       V12 — Gene 2 name
@@ -42,7 +42,7 @@
 #     - Cases where the breakpoint occurs before the ORF start are skipped (non-coding fusions).
 #
 # OUTPUT:
-#   fusionpeptidelistdfunique.tsv — TSV with columns:
+#   gene_fusion_peptide_library.tsv — TSV with columns:
 #     [1] Gene1_name  [2] Gene2_name  [3] breakpoint_nt_position  [4] peptide_sequence
 #     One row per unique fusion peptide; duplicates removed.
 
@@ -53,7 +53,7 @@ library(stringr)
 library(dplyr)
 
 # Load the fusion database and select the relevant columns
-level1original = data.frame(fread("Level1combinedFGDB2genes_ORF_analyzed_gencode_h19v19_real_Inframe_only_transcript_seq_with_orffinder_result.txt"))
+level1original = data.frame(fread("fusion_inframe_orfs.tsv"))
 
 # Deduplicate: only unique combinations of the key columns are processed.
 # V8=Gene1, V12=Gene2, V16=breakpoint, V17=sequence, V19=orf_feature, V20=orf_start, V21=orf_end
@@ -78,6 +78,8 @@ for(nfusion in 1:dim(level1)[1]){
 
   # ── Calculate the exploration window around the breakpoint ────────────────────
   # We want to look ±30 codons from the breakpoint, but the window must be in-frame.
+  # 30 codons = 30 amino acids, matching --max-pep-len 30 in the DIA-NN search:
+  # no tryptic peptide longer than 30 aa can be detected, so looking further is pointless.
   # (gascase1$V16 - gascase1$V20) %% 3  gives the frame offset of the breakpoint
   # relative to the ORF start codon — this is subtracted to align to codon boundaries.
 
@@ -210,4 +212,4 @@ fusionpeptidelistdfunique = unique(fusionpeptidelistdf)
 
 
 # Save the library; columns: Gene1, Gene2, breakpoint_nt_pos, peptide_sequence
-write.table(fusionpeptidelistdfunique, "fusionpeptidelistdfunique.tsv", col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")
+write.table(fusionpeptidelistdfunique, "gene_fusion_peptide_library.tsv", col.names = FALSE, row.names = FALSE, quote = FALSE, sep = "\t")

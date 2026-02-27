@@ -3,9 +3,9 @@
 # ABOUTME: Review inputs and paths before running on your environment.
 #
 # PURPOSE:
-#   Generates Library_and_DIANN_hotspot.sh — the cluster job script that runs DIA-NN.
+#   Generates diann_search_job.sh — the cluster job script that runs DIA-NN.
 #   Called by Complete_pipeline.sh; output is piped directly into the target script:
-#     ./generate_diann_job.sh /samples /fasta /diann.img > Library_and_DIANN_hotspot.sh
+#     ./generate_diann_job.sh /samples /fasta /diann.img > diann_search_job.sh
 #
 # DIA-NN SEARCH STRATEGY (two-pass):
 #   Pass 1 — Library-free search against the Level 1 FASTA:
@@ -24,7 +24,7 @@
 #   $2  FASTA_FILE — Level 1 custom FASTA (canonical + mutated + fusion sequences)
 #   $3  DIANN_IMG  — path to the DIA-NN 2.0.2 Apptainer/Singularity image
 #
-# Usage: ./generate_diann_job.sh /path/to/sample_folder > Library_and_DIANN_hotspot.sh
+# Usage: ./generate_diann_job.sh /path/to/sample_folder > diann_search_job.sh
 
 # Arguments
 SAMPLE_DIR="$1"

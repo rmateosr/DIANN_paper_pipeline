@@ -13,12 +13,12 @@
 #   Searches are parallelised across 8 cores using GNU parallel.
 #
 # INPUT:
+#   $1 (DB)         — Path to the human canonical reference proteome FASTA (one sequence per line).
+#                     Passed in from Post_DIANN_pipeline.sh, which receives it from Complete_pipeline.sh.
 #   peptide.fasta   — FASTA of all DIA-NN-detected peptides (from peptidetofasta.py)
-#   DB              — UniProt canonical reference proteome, one sequence per line
-#                     (pre-formatted: headers already removed or in standard FASTA)
 #
 # OUTPUT:
-#   non_canonical_sequences_justsequences.txt — FASTA headers of peptides NOT found
+#   non_canonical_peptide_headers.txt — FASTA headers of peptides NOT found
 #       in the reference proteome. The full header (Protein.Group_Sequence_Charge) is
 #       preserved so downstream R scripts can recover mutation context and peptide sequence.
 #
@@ -40,10 +40,10 @@ set -o nounset
 
 # Input paths
 QUERY="peptide.fasta"
-DB="/path/to/uniprotkb_proteome_UP000005640_oneline.fasta"  # Human canonical proteome (one sequence per line)
+DB="$1"  # Human canonical proteome path; passed from Post_DIANN_pipeline.sh → Complete_pipeline.sh
 
 # Output: headers of peptides absent from the reference proteome
-NOT_PRESENT="non_canonical_sequences_justsequences.txt"
+NOT_PRESENT="non_canonical_peptide_headers.txt"
 
 # Step 1: Flatten the reference proteome into a single continuous string.
 # Removing headers (^>) and all newlines means each peptide sequence can be found
@@ -59,7 +59,7 @@ awk 'BEGIN{RS=">"; ORS=""} NR>1 {n=split($0, lines, "\n"); header=lines[1]; seq=
 > "$NOT_PRESENT"
 
 # Ensure the output file is absent so appends start fresh (belt-and-suspenders with Step 3)
-rm -f non_canonical_sequences_justsequences.txt
+rm -f non_canonical_peptide_headers.txt
 
 # Step 4: Define the per-peptide matching function.
 # grep -m 1 -qF: fast substring search; exits after the first match (saves time).
@@ -69,7 +69,7 @@ match_seq() {
   header="$1"
   seq="$2"
   if ! grep -m 1 -qF "$seq" db_seq.txt; then
-    echo "$header" >> non_canonical_sequences_justsequences.txt
+    echo "$header" >> non_canonical_peptide_headers.txt
   fi
 }
 export -f match_seq

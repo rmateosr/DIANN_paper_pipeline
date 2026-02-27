@@ -10,23 +10,23 @@
 #     3. Produces two PDF reports — one grouped by gene, one grouped by mutation.
 #
 # INPUTS:
-#   non_canonical_sequences_justsequences.txt — headers of peptides absent from the
-#       canonical proteome (output of presentinlibraryparallel_grepjustone.sh).
+#   non_canonical_peptide_headers.txt — headers of peptides absent from the
+#       canonical proteome (output of filter_canonical_peptides.sh).
 #       Hotspot entries contain ":" in the header
 #       (e.g., Q13485_D537_V:5_ALQLLVEVLHTMPIADPQPLD_3).
 #   Reports/report_peptidoforms.pr_matrix.tsv — DIA-NN peptidoform quantification matrix.
-#   UP000005640_9606_downloaded03072025_oneline.fasta — UniProt canonical FASTA used to
+#   human_canonical_proteome.fasta — UniProt canonical FASTA (one sequence per line) used to
 #       map Protein IDs to gene names.
 #
 # OUTPUTS (all written to Peptidomics_Results/):
-#   Peptidomics_results_Hotspot.tsv                        — normalised intensities for
-#       non-canonical hotspot peptides only.
-#   Peptidomics_results_canonandnoncanon_Hotspot.tsv       — combined table with mutant
-#       and matched canonical peptides.
-#   Peptidomics_results_canon_and_noncanon_split_bygene_Hotspot.pdf — one plot per gene,
-#       showing all mutations and their canonical counterparts.
-#   Peptidomics_results_canon_and_noncanon_split_bymut_Hotspot.pdf  — one plot per
-#       individual mutation, showing only that mutation's canonical counterpart.
+#   hotspot_peptides.tsv                   — normalised intensities for non-canonical
+#       hotspot peptides only.
+#   hotspot_peptides_with_canonical.tsv    — combined table with mutant and matched
+#       canonical peptides.
+#   hotspot_by_gene.pdf  — one plot per gene, showing all mutations and their canonical
+#       counterparts.
+#   hotspot_by_mutation.pdf  — one plot per individual mutation, showing only that
+#       mutation's canonical counterpart.
 
 library(stringr)
 library(ggplot2)
@@ -42,7 +42,7 @@ library(data.table)
 # We parse the GN= field to get the HGNC gene symbol for each protein accession.
 # This lookup is used later to relabel peptides with a human-readable gene name
 # when DIA-NN assigns a mutation to a protein ID rather than a gene symbol.
-headers <- grep("^>", readLines("UP000005640_9606_downloaded03072025_oneline.fasta"), value = TRUE)
+headers <- grep("^>", readLines("human_canonical_proteome.fasta"), value = TRUE)
 headersplit =   str_split(headers, "\\|")
 Protein_ID = rep("",length(headersplit) )
 Gene_name = rep("",length(headersplit) )
@@ -56,12 +56,12 @@ Id_genematch = data.frame(Gene = Gene_name, Protein_ID = Protein_ID)
 
 
 # ── 2. Load and filter non-canonical peptide headers ──────────────────────────
-# non_canonical_sequences_justsequences.txt contains FASTA headers for ALL peptides
+# non_canonical_peptide_headers.txt contains FASTA headers for ALL peptides
 # absent from the reference proteome. Hotspot entries are distinguished from gene fusion
 # entries by the presence of ":" in the header string.
 # Format for hotspot: {Protein_ID}_{RefAA}{pos}_{AltAA}:{frequency}_{Sequence}_{Charge}
 #   e.g., Q13485_D537_V:5_ALQLLVEVLHTMPIADPQPLD_3
-noncanonical_peptides = data.frame(fread("non_canonical_sequences_justsequences.txt", header = F, sep = "\t"))
+noncanonical_peptides = data.frame(fread("non_canonical_peptide_headers.txt", header = F, sep = "\t"))
 noncanonical_peptides = noncanonical_peptides[grep(":", noncanonical_peptides$V1),, drop = FALSE]
 
 
@@ -136,7 +136,7 @@ for(nshare in 1:length(mutationssharingpeptide)){
 
 # ── 7. Save the non-canonical peptide table ────────────────────────────────────
 dir.create("Peptidomics_Results")
-write.table(normalizednumericoutputDIANN_selection, "Peptidomics_Results/Peptidomics_results_Hotspot.tsv", sep = "\t", quote = F, col.names = TRUE, row.names = FALSE )
+write.table(normalizednumericoutputDIANN_selection, "Peptidomics_Results/hotspot_peptides.tsv", sep = "\t", quote = F, col.names = TRUE, row.names = FALSE )
 
 # Proteotypic and Precursor.Charge are numeric in the DIA-NN output but are metadata
 # (not sample intensities). Converting them to character prevents them from being
@@ -389,7 +389,7 @@ noncanonandcanon = noncanonandcanon[,!colnames(noncanonandcanon) %in% c("Proteot
 
 # ── 15. PDF 1: One plot per gene — all mutations for that gene on one page ─────
 # noncanonLabel contains one entry per unique gene (de-duplicated by gene name prefix).
-pdf("Peptidomics_Results/Peptidomics_results_canon_and_noncanon_split_bygene_Hotspot.pdf", width = 10, height = 15)
+pdf("Peptidomics_Results/hotspot_by_gene.pdf", width = 10, height = 15)
 
 noncanonLabel = as.character(unique(noncanonandcanon$Label[noncanonandcanon$Canon == FALSE]))
 # De-duplicate by gene symbol (first element before "_") so each gene appears once
@@ -449,7 +449,7 @@ dev.off()
 # Same structure as PDF 1 but using each unique mutation label (not de-duplicated by gene),
 # so every individual substitution gets its own dedicated plot with only its
 # paired canonical counterpart.
-pdf("Peptidomics_Results/Peptidomics_results_canon_and_noncanon_split_bymut_Hotspot.pdf", width = 10, height = 15)
+pdf("Peptidomics_Results/hotspot_by_mutation.pdf", width = 10, height = 15)
 
 noncanonLabel = as.character(unique(noncanonandcanon$Label[noncanonandcanon$Canon == FALSE]))
 
@@ -545,4 +545,4 @@ dev.off()
 
 
 # ── 17. Save the combined canonical + non-canonical table ─────────────────────
-write.table(noncanonandcanon, "Peptidomics_Results/Peptidomics_results_canonandnoncanon_Hotspot.tsv", sep = "\t", quote = F, col.names = TRUE, row.names = FALSE )
+write.table(noncanonandcanon, "Peptidomics_Results/hotspot_peptides_with_canonical.tsv", sep = "\t", quote = F, col.names = TRUE, row.names = FALSE )

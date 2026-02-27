@@ -9,6 +9,8 @@
 set -xv
 set -o errexit
 set -o nounset
+module use /usr/local/package/modulefiles/
+module load R/4.4.3
 
 Rscript noncanonicalpeptidesanalysis_Hotspot.R
 

@@ -18,8 +18,8 @@
 #       Sequence:       {Stripped.Sequence}
 #
 #   The header encodes protein and charge so that the downstream grep step
-#   (presentinlibraryparallel_grepjustone.sh) can write back the full context
-#   into non_canonical_sequences_justsequences.txt, which is later parsed by the
+#   (filter_canonical_peptides.sh) can write back the full context
+#   into non_canonical_peptide_headers.txt, which is later parsed by the
 #   R scripts to recover mutation labels and peptide sequences.
 
 import pandas as pd
@@ -29,7 +29,7 @@ df = pd.read_csv(f"Reports/report_peptidoforms.pr_matrix.tsv", sep="\t")
 
 # Write one FASTA entry per row in the DIA-NN matrix.
 # All rows are written here; filtering against the reference proteome happens
-# in the next pipeline step (presentinlibraryparallel_grepjustone.sh).
+# in the next pipeline step (filter_canonical_peptides.sh).
 with open(f"peptide.fasta", "w") as fasta_file:
     for index, row in df.iterrows():
         fasta_file.write(f">{row['Protein.Group']}_{row['Stripped.Sequence']}_{row['Precursor.Charge']}\n{row['Stripped.Sequence']}\n")
