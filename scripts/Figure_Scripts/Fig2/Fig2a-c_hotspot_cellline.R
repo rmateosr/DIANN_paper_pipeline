@@ -1,7 +1,5 @@
 # Previously labeled as: Hotspot_figure_script_cellline_forpaper.R
-# Hotspot mutation peptide detection and visualization across 10 cell lines (KRAS, TP53, BRAF)
 
-# --- Install and Load Libraries ---
 required_packages <- c(
   "stringr", "ggplot2", "RColorBrewer", "reshape2", "dplyr", "data.table",
   "foreach", "gridExtra", "parallel", "extrafont", "patchwork", "ggrepel",
@@ -22,7 +20,6 @@ library(reshape2)
 library(dplyr)
 library(data.table)
 
-# --- Plot Theme and Dimensions ---
 windowsFonts("Helvetica" = windowsFont("Arial"))
 my_theme <- function() {
   theme_bw(base_family = "Helvetica") %+replace%
@@ -49,9 +46,6 @@ letterinchesheight =  21.59/2.54 * 3/4
 
 setwd("C:/Users/Raul/Dropbox/Papers/DIA-NN/Figures/")
 
-# --- Parse FASTA for Protein ID to Gene Name Mapping ---
-# Provides the gene name associated to each protein ID from the fasta
-# This will help relabel the peptide with the most frequent mutation
 headers <- grep("^>", readLines("Data_required/Hotspot_and_Gene_Fusion_Analysis/SHIROKANE_06242025_pdxscript/UP000005640_9606_downloaded03072025_oneline.fasta"), value = TRUE)
 headersplit =   str_split(headers, "\\|")
 Protein_ID = rep("",length(headersplit) )
@@ -64,48 +58,43 @@ for(cont in 1:length(headersplit)){
 
 Id_genematch = data.frame(Gene = Gene_name, Protein_ID = Protein_ID)
 
-# --- Load Non-Canonical Peptide List ---
 noncanonical_peptides = data.frame(fread("Data_required/Hotspot_and_Gene_Fusion_Analysis/SHIROKANE_06242025_pdxscript/non_canonical_sequences_justsequences.txt", header = F, sep = "\t"))
 noncanonical_peptides = noncanonical_peptides[grep(":", noncanonical_peptides$V1),, drop = FALSE]
 
-# --- Extract Peptide Sequences from Identifiers ---
-# e.g., Q13485_D537_V:5_ALQLLVEVLHTMPIADPQPLD_3 --> ALQLLVEVLHTMPIADPQPLD
+
+# Q13485_D537_V:5_ALQLLVEVLHTMPIADPQPLD_3 --> ALQLLVEVLHTMPIADPQPLD
 noncanonical_peptides_sequence = str_split(noncanonical_peptides$V1, "_")
-# The sequence is the second-to-last element after splitting by "_"
 lengths = unlist(lapply(noncanonical_peptides_sequence, length))
 noncanonical_peptides_sequenceonly = c()
 for(cont in 1: length(lengths)){
   noncanonical_peptides_sequenceonly= c(noncanonical_peptides_sequenceonly,  noncanonical_peptides_sequence[[cont]][lengths[cont]-1])
 }
 
-# --- Load DIA-NN Precursor Matrix ---
+
 outputDIANN =data.frame(fread("Data_required/Hotspot_and_Gene_Fusion_Analysis/SHIROKANE_06242025_pdxscript/Reports/report_peptidoforms.pr_matrix.tsv"), check.names=FALSE)
 
-# --- Column-Sum Normalization ---
+
 numericones  =grep("raw.dia", colnames(outputDIANN))
 numericoutputDIANN = outputDIANN[,numericones]
 maxnumericoutputDIANN = colSums(numericoutputDIANN,na.rm=T)
 normalizednumericoutputDIANN = t(t(numericoutputDIANN)/ maxnumericoutputDIANN)  * 1000000
 
-# --- Extract Sample Names for Column Labels ---
+
 colnames(normalizednumericoutputDIANN) <- tools::file_path_sans_ext(basename(colnames(outputDIANN)[numericones]))
 
 normalizednumericoutputDIANN = data.frame(normalizednumericoutputDIANN)
 grep("raw.dia", colnames(outputDIANN),invert = TRUE)
 
-# --- Combine Normalized Data with Metadata ---
+
 metadata = outputDIANN[,grep("raw.dia", colnames(outputDIANN),invert = TRUE)]
 normalizednumericoutputDIANN = cbind(normalizednumericoutputDIANN, metadata)
 
-# --- Filter to Mutated Peptides ---
-# Only peptides without a perfect match in the reference proteome are selected
+
 normalizednumericoutputDIANN_selection = normalizednumericoutputDIANN[normalizednumericoutputDIANN$Stripped.Sequence%in% noncanonical_peptides_sequenceonly,]
 
 mutationwithoutgenelabel = str_split_fixed(normalizednumericoutputDIANN_selection$Genes, "_", 2)[,2]
 mutationssharingpeptide = str_split(normalizednumericoutputDIANN_selection$Protein.Ids, ";")
 
-# --- Resolve Shared Mutations (Pick Most Common) ---
-# When multiple mutations map to the same peptide, use the most frequently found mutation-gene
 for(nshare in 1:length(mutationssharingpeptide)){
   thismutationssharingpeptide = mutationssharingpeptide[[nshare]]
   if(length(thismutationssharingpeptide) > 1){
@@ -118,11 +107,11 @@ for(nshare in 1:length(mutationssharingpeptide)){
   }
 }
 
-# --- Save Filtered Mutated Peptides ---
+
 dir.create("Peptidomics_Results")
 write.table(normalizednumericoutputDIANN_selection, "Peptidomics_Results/Peptidomics_results_Hotspot.tsv", sep = "\t", quote = F, col.names = TRUE, row.names = FALSE )
 
-# --- Prepare Data for Plotting ---
+
 normalizednumericoutputDIANN_selection$Proteotypic = as.character(normalizednumericoutputDIANN_selection$Proteotypic)
 normalizednumericoutputDIANN_selection$Precursor.Charge = as.character(normalizednumericoutputDIANN_selection$Precursor.Charge)
 
@@ -131,42 +120,36 @@ normalizednumericoutputDIANN_selection$Gene_and_mut = apply(cbind(normalizednume
 numeric_cols <- sapply(normalizednumericoutputDIANN_selection, is.numeric)
 selected_normalizednumericoutputDIANN <- normalizednumericoutputDIANN_selection[, c(names(normalizednumericoutputDIANN_selection)[numeric_cols], "Gene_and_mut")]
 
-# --- Color Palette ---
+
 myColors <- c(
-  "#E41A1C",  # Red
-  "#377EB8",  # Blue
-  "#4DAF4A",  # Green
-  "#984EA3",  # Purple
-  "#FF7F00",  # Orange
-  "#E5C100",  # Muted Yellow
-  "#A65628",  # Brown
-  "#F781BF",  # Pink
-  "#999999",  # Gray
-  "#1B9E77",  # Teal
-  "#D95F02",  # Dark Orange
-  "#7570B3",  # Deep Blue
-  "#66C2A5",  # Soft Cyan
-  "#0033A0",  # Intense Blue
-  "#F4A6D7",  # Pastel Pink
-  "#FC8D62",  # Coral
-  "#8DD3C7",  # Aqua
-  "#FFFFB3",  # Light Yellow
-  "#BEBADA",  # Lavender
-  "#FB8072",  # Salmon
-  "#80B1D3",  # Sky Blue
-  "#FDB462",  # Light Orange
-  "#B3DE69",  # Light Green
-  "#FCCDE5",  # Light Pink
-  "#D9D9D9",  # Light Gray
-  "#BC80BD"   # Soft Purple
+  "#E41A1C",  
+  "#377EB8",  
+  "#4DAF4A",  
+  "#984EA3",  
+  "#FF7F00",  
+  "#E5C100",  
+  "#A65628",  
+  "#F781BF",  
+  "#999999",  
+  "#1B9E77",  
+  "#D95F02",  
+  "#7570B3",  
+  "#66C2A5",  
+  "#0033A0",  
+  "#F4A6D7",  
+  "#FC8D62",  
+  "#8DD3C7",  
+  "#FFFFB3",  
+  "#BEBADA",  
+  "#FB8072",  
+  "#80B1D3",  
+  "#FDB462",  
+  "#B3DE69",  
+  "#FCCDE5",  
+  "#D9D9D9",  
+  "#BC80BD"   
 )
 
-# --- Canonical Peptide Re-Integration Algorithm ---
-# For each mutated peptide, find the corresponding wild-type (canonical) peptide.
-# Handles three cases:
-#   1. Mutation creates a new R/K (tryptic cleavage site) at the end of the peptide
-#   2. Mutation destroys an existing R/K at what would be the cleavage site
-#   3. Standard single amino acid substitution (same-length peptide matching)
 
 noncanonicalpeptides = normalizednumericoutputDIANN_selection$Stripped.Sequence
 
@@ -177,8 +160,6 @@ for(cont in 1:length(noncanonicalpeptides)){
   Ref = substring(thismut[2],1,1)
   Alt = substring(thismut[3],1,1)
   # CASE 1: Mutation generates an R/K at the end of the peptide
-  # str_locate_all ensures the R/K we are trying to solve is located at the end of the peptide
-  # (a case was found where the mutation occurred inside the peptide)
   if((Alt == "R" | Alt == "K") & str_locate_all(noncanonicalpeptides[cont], "[KR]")[[1]][,1][1] == nchar(noncanonicalpeptides[cont]) ){
     mutatedAaremoved = substring(noncanonicalpeptides[cont], 1, (nchar(noncanonicalpeptides[cont])-1))
     locationofpotentialnonmut = grep(mutatedAaremoved, normalizednumericoutputDIANN$Stripped.Sequence)
@@ -197,23 +178,18 @@ for(cont in 1:length(noncanonicalpeptides)){
     
     # CASE 2: The reference amino acid is R/K, so the wild-type peptide would be split at that position
   } else if ((Ref == "R" | Ref == "K" )& str_locate_all(noncanonicalpeptides[cont], "[KR]")[[1]][,1][1] == nchar(noncanonicalpeptides[cont])  ){
-    # Since we don't know which Aa position matches, we split on all occurrences of Alt
     if (Alt[[1]] == "*") {
       pattern_to_use = "\\*"
     } else {
       pattern_to_use = Alt[[1]]
     }
     fragmentsofpeptide = str_split(noncanonicalpeptides[cont], pattern_to_use)[[1]]
-    # Select the longest fragment
     longestfragment  =fragmentsofpeptide[which.max(nchar(fragmentsofpeptide))]
-    # Find candidate non-mutated peptides matching this fragment
     locationofpotentialnonmut = grep(longestfragment, normalizednumericoutputDIANN$Stripped.Sequence)
     potentialnonmut = normalizednumericoutputDIANN$Stripped.Sequence[locationofpotentialnonmut]
     potentialnonmut =potentialnonmut [nchar(potentialnonmut) <  nchar(noncanonicalpeptides[cont])]
     if(length(potentialnonmut) > 0 ){
       potentialnonmut = potentialnonmut[order(nchar(potentialnonmut))]
-      # Match the mutated peptide to non-mutated options;
-      # the correct one differs from/until the R/K position
       for(npotentialnonmut in 1:length(potentialnonmut)){
         Refpept = str_split(potentialnonmut[npotentialnonmut], "")[[1]]
         Mutpept = str_split(noncanonicalpeptides[cont], "")[[1]]
@@ -261,7 +237,6 @@ for(cont in 1:length(noncanonicalpeptides)){
   }
 }
 
-# --- Combine Canonical and Non-Canonical Peptides ---
 canonicalpeptidesfromSNV = normalizednumericoutputDIANN[normalizednumericoutputDIANN$Stripped.Sequence %in% sequencesmatching_samelength_canonical_SNV,]
 canonicalpeptidesfromSNV$Gene_and_mut = apply(cbind(canonicalpeptidesfromSNV$Genes, canonicalpeptidesfromSNV$Stripped.Sequence  ), 1, paste, collapse= "_")
 
@@ -281,7 +256,7 @@ noncanonandcanon$Label = str_split_fixed(noncanonandcanon$Gene_and_mut, ";",2)[,
 Labelcanon = str_split_fixed(noncanonandcanon$Label, "_", 2)[,1]
 noncanonandcanon$Label[noncanonandcanon$Canon] = Labelcanon[noncanonandcanon$Canon]
 
-# --- Deduplicate by Highest Signal Per Label ---
+
 numeric_cols <- names(noncanonandcanon)[sapply(noncanonandcanon, is.numeric)]
 filtered_df <- data.frame(noncanonandcanon %>%
                             rowwise() %>%
@@ -300,7 +275,7 @@ meltselected_normalizednumericoutputDIANN$variable = factor(meltselected_normali
 
 canonLabel = as.character(unique(noncanonandcanon$Label[noncanonandcanon$Canon == TRUE]))
 
-# --- Assign Canonical Sequences to Labels ---
+
 noncanonandcanon$Sequence = ""
 Genenames_sequencesmatching_samelength_canonical_SNV
 sequencesmatching_samelength_canonical_SNV
@@ -309,11 +284,9 @@ for(cont in 1:length(sequencesmatching_samelength_canonical_SNV)){
   noncanonandcanon$Sequence[whichone] = sequencesmatching_samelength_canonical_SNV[cont]
 }
 noncanonandcanon$Sequence[noncanonandcanon$Canon == "FALSE"] = ""
-
-# Remove non-result numeric columns
 noncanonandcanon = noncanonandcanon[,!colnames(noncanonandcanon) %in% c("Proteotypic", "Precursor.Charge")]
 
-# --- KRAS Mutation Figure ---
+
 noncanonandcanonKRAS = noncanonandcanon
 
 colnames(noncanonandcanonKRAS)[1:20]

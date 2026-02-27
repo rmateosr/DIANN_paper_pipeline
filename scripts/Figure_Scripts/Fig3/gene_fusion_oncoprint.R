@@ -1,7 +1,5 @@
 # Previously labeled as: SummaryofGeneFusionsbyFusionPDB_Adachisamples_forpaper.R
-# OncoPrint of Level 1 gene fusions across 49 PDX tumor samples
 
-# --- Load Libraries ---
 library(data.table)
 library(dplyr)
 library(tidyr)
@@ -12,7 +10,6 @@ library(reshape2)
 library(ComplexHeatmap)
 library(grid)
 
-# --- Plot Theme and Dimensions ---
 windowsFonts("Helvetica" = windowsFont("Arial"))
 my_theme <- function() {
   theme_bw(base_family = "Helvetica") %+replace%
@@ -37,7 +34,6 @@ height = width/5*3
 letterincheswidth =  19.05/2.54
 letterinchesheight =  21.59/2.54 * 3/4
 
-# --- Define PDX Sample IDs ---
 samples <- c(
   "J-PDX1249_T", "J-PDX0919_T", "J-PDX0850_T", "J-PDX0845_T", "J-PDX0826_T",
   "J-PDX0769_T", "J-PDX0598_T", "J-PDX0596_T", "J-PDX0438_T", "J-PDX0381_T",
@@ -51,18 +47,14 @@ samples <- c(
   "J-PDX0865_T", "J-PDX0804_T", "J-PDX0464_T", "J-PDX0387_T"
 )
 
-# --- Load Gene Fusion Data ---
 PDXgf = data.frame(fread("C:/Users/Raul/Documents/Proteomics_project/PDX_samples/Level1_Gene_fusions_in_GCATworkflow.tsv"))
 
-# Build gene fusion pairs and filter to the PDX samples
 genefusions = unique(data.frame(gene_fusion = apply(cbind(PDXgf$V1,"_",PDXgf$V2), 1, paste, collapse = ""), Sample =PDXgf$V3))
 genefusions = genefusions [genefusions$Sample %in% samples,]
 
-# --- Create Binary Matrix for OncoPrint ---
 mat <- table(genefusions)
 binary_mat <- ifelse(mat > 0, "Fusion", "")
 
-# --- Define OncoPrint Drawing Functions ---
 col <- c("Fusion" = "black")
 
 alter_fun = list(
@@ -74,7 +66,6 @@ alter_fun = list(
   }
 )
 
-# --- Generate OncoPrint Figure ---
 png("C:/Users/Raul/Dropbox/Papers/DIA-NN/Shiraishi_review_08192025/Figures/3b_GeneFusionsSummary_oncoprint_Level1_Adachisamples_forpaper.png", width  = letterincheswidth * 1/3 , height =letterinchesheight*0.5,units = "in", res = 1000 )
 
 names(col) <- "Fusion"
@@ -116,4 +107,3 @@ oncoPrint(
 )
 
 dev.off()
-

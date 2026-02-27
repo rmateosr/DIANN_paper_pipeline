@@ -1,7 +1,5 @@
 # Previously labeled as: Summaryofhotspotmutations_Adachisamples_forpaper.R
-# OncoPrint of WES hotspot mutations across PDX tumor samples
 
-# --- Load Libraries ---
 library(data.table)
 library(dplyr)
 library(tidyr)
@@ -12,11 +10,9 @@ library(reshape2)
 library(ComplexHeatmap)
 library(grid)
 
-# --- Load WES Mutation Data and Hotspot Database ---
 PDXmut = data.frame(fread("C:/Users/Raul/Documents/Proteomics_project/PDX_samples/all_samples_mutations_merged_with_sample.tsv"))
 hotspot = data.frame(fread("C:/Users/Raul/Documents/Proteomics_project/PDX_samples//hotspots.txt"))
 
-# --- Filter Out Non-coding and Synonymous Variants ---
 PDXmut = PDXmut[grep("synonymous_variant" ,PDXmut$Consequence, invert = TRUE),]
 PDXmut = PDXmut[grep("intron_variant" ,PDXmut$Consequence, invert = TRUE),]
 PDXmut = PDXmut[grep("non_coding_transcript_exon_variant" ,PDXmut$Consequence, invert = TRUE),]
@@ -24,15 +20,13 @@ PDXmut = PDXmut[grep("non_coding_transcript_variant" ,PDXmut$Consequence, invert
 PDXmut = PDXmut[grep("3_prime_UTR_variant" ,PDXmut$Consequence, invert = TRUE),]
 PDXmut = PDXmut[grep("5_prime_UTR_variant" ,PDXmut$Consequence, invert = TRUE),]
 
-# --- Parse Hotspot Variants Into Individual Rows ---
 hotspot_split <-data.frame( hotspot %>%
-  separate_rows(Variants, sep = "\\|") %>%
-  mutate(Variant_Letter = sub(":.*", "", Variants)))
+                              separate_rows(Variants, sep = "\\|") %>%
+                              mutate(Variant_Letter = sub(":.*", "", Variants)))
 
 hotspot_split$ResidueAA = substring(hotspot_split$Residue,1,1)
 hotspot_split$mutationslash = apply(cbind(hotspot_split$ResidueAA, "/", hotspot_split$Variant_Letter),1,paste, collapse = "" )
 
-# --- Match WES Mutations to Hotspot Positions ---
 PDXmutGeneswithHotspot = PDXmut[PDXmut$SYMBOL %in% hotspot_split$Gene,]
 
 PDXmutGeneswithHotspot_atHotspot = data.frame()
@@ -41,19 +35,17 @@ for(cont in 1: dim(PDXmutGeneswithHotspot)[1]){
   thiscase = PDXmutGeneswithHotspot[cont,]
   hotspotsthisgene = hotspot_split[hotspot_split$Gene == thiscase$SYMBOL,]
   numeric_part <- gsub("[^0-9]", "", hotspotsthisgene$Residue)
-
+  
   if(sum(thiscase$Protein_position == numeric_part & thiscase$Amino_acids == hotspotsthisgene$mutationslash) != 0){
     print(cont)
     PDXmutGeneswithHotspot_atHotspot = rbind(PDXmutGeneswithHotspot_atHotspot,thiscase )
   }
-
+  
 }
 
-# --- Filter to Tumor-only Samples and Clean Sample Names ---
 PDXmutGeneswithHotspot_atHotspotonlyTumor = PDXmutGeneswithHotspot_atHotspot
 PDXmutGeneswithHotspot_atHotspotonlyTumor$Sample <- sub("TG3$", "", PDXmutGeneswithHotspot_atHotspotonlyTumor$Sample)
 
-# --- Define PDX Sample IDs ---
 samples <- c(
   "J-PDX1249", "J-PDX0919", "J-PDX0850", "J-PDX0845", "J-PDX0826",
   "J-PDX0769", "J-PDX0598", "J-PDX0596", "J-PDX0438", "J-PDX0381",
@@ -67,11 +59,9 @@ samples <- c(
   "J-PDX0865", "J-PDX0804", "J-PDX0464", "J-PDX0387"
 )
 
-# --- Save Filtered Hotspot Mutations ---
 PDXmutGeneswithHotspot_atHotspotonlyTumor[PDXmutGeneswithHotspot_atHotspotonlyTumor$Sample %in% samples,]
 write.table(PDXmutGeneswithHotspot_atHotspotonlyTumor,"C:/Users/Raul/Dropbox/Papers/DIA-NN/Shiraishi_review_08192025/Figures//PDXmutGeneswithHotspot_atHotspotonlyTumor.tsv", row.names = FALSE, sep = "\t", quote = FALSE)
 
-# --- Plot Theme and Dimensions ---
 windowsFonts("Helvetica" = windowsFont("Arial"))
 my_theme <- function() {
   theme_bw(base_family = "Helvetica") %+replace%
@@ -96,20 +86,17 @@ height = width/5*3
 letterincheswidth =  19.05/2.54
 letterinchesheight =  21.59/2.54 * 3/4
 
-# --- Filter to Study Samples and Deduplicate ---
 PDXmutGeneswithHotspot_atHotspotonlyTumor = PDXmutGeneswithHotspot_atHotspotonlyTumor[PDXmutGeneswithHotspot_atHotspotonlyTumor$Sample %in% substring(samples,1,9),]
 
 rawfiles = fread("C:/Users/Raul/Documents/Proteomics_project/PDX_samples/rawsamplesstudied.txt", header = FALSE)
 rawfiles= str_split_fixed(rawfiles$V1, "_", 2)[,1]
 PDXmutGeneswithHotspot_atHotspotonlyTumor = unique(PDXmutGeneswithHotspot_atHotspotonlyTumor[,colnames(PDXmutGeneswithHotspot_atHotspotonlyTumor) %in% c("Sample", "Chr", "Pos", "Ref", "Alt", "SYMBOL")])
 
-# --- Create Binary Matrix for OncoPrint ---
 mat <- table(PDXmutGeneswithHotspot_atHotspotonlyTumor$SYMBOL,
              PDXmutGeneswithHotspot_atHotspotonlyTumor$Sample)
 
 binary_mat <- ifelse(mat > 0, "Mutated", "")
 
-# --- Define OncoPrint Drawing Functions ---
 col <- c("Mutated" = "black")
 
 alter_fun = list(
@@ -121,7 +108,6 @@ alter_fun = list(
   }
 )
 
-# --- Generate OncoPrint Figure ---
 png("C:/Users/Raul/Dropbox/Papers/DIA-NN/Shiraishi_review_08192025/Figures/Fig2d_hotspotmutationsSummary_oncoprint.png", width  = letterincheswidth *2/3 , height =letterinchesheight * 0.5,units = "in", res = 1000 )
 
 oncoPrint(binary_mat,
@@ -142,7 +128,7 @@ oncoPrint(binary_mat,
           ),
           column_title = "Hotspot Mutation Landscape in Tumoral samples",
           column_title_gp = grid::gpar(fontsize = 10),
-            column_title_side = "top",
+          column_title_side = "top",
           top_annotation = HeatmapAnnotation(
             bar = anno_oncoprint_barplot(
               height = unit(1, "cm"),
